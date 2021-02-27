@@ -15,7 +15,7 @@ function longestSubstring(s: string, k: number): number {
         let cnt: {
             [proppName: string]: number
         } = {}
-        for (let i = start; i < end; i++) {
+        for (let i = start; i <= end; i++) {
             if (cnt[s[i]] === undefined) {
                 cnt[s[i]] = 1
             } else {
