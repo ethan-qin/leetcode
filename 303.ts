@@ -27,25 +27,30 @@
 // 著作权归领扣网络所有。商业转载请联系官方授权，非商业转载请注明出处。
 
 class NumArray {
-    nums: number[]
+    preSum: number[]
     constructor(nums: number[]) {
-        this.nums = nums
+        this.preSum = []
+        for (let i = 0; i < nums.length; i++) {
+            this.preSum[i] = (this.preSum[i - 1] || 0) + nums[i]
+        }
     }
 
     sumRange(i: number, j: number): number {
-        let sum = 0;
-        for (let index = i; index <= j; index++) {
-            sum += this.nums[index]
+        if (i === 0) {
+            return this.preSum[j]
+        } else {
+            // return this.preSum[j] - this.preSum[i] + this.nums[i]
+            // return this.preSum[j] - (this.preSum[i] - this.nums[i])
+            return this.preSum[j] - this.preSum[i - 1]
         }
-        return sum
     }
 }
-let nums = [-2, 0, 3, -5, 2, -1]
+let nums = [1, 12, -5, -6, 50, 3]
 var obj = new NumArray(nums)
-var param_1 = obj.sumRange(0, 2)
+var param_1 = obj.sumRange(1, 2)
 console.log(param_1);
 
-var param_2 = obj.sumRange(2, 5)
-console.log(param_2);
-var param_3 = obj.sumRange(0, 5)
-console.log(param_3);
+// var param_2 = obj.sumRange(2, 5)
+// console.log(param_2);
+// var param_3 = obj.sumRange(0, 5)
+// console.log(param_3);
