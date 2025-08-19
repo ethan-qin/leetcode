@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>查询 + 表格自适应高度</title>
+  <style>
+    :root { --gap: 12px; }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; margin: 0; }
+    body {
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans", "PingFang SC", "Microsoft YaHei", sans-serif;
+      background: #fafafa;
+      color: #222;
+    }
+    .page { min-height: 100vh; padding: var(--gap); }
+    .search {
+      background: #fff;
+      border: 1px solid #e5e6eb;
+      border-radius: 8px;
+      padding: 16px;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, .03);
+    }
+    .search .row { display: flex; gap: 12px; margin-top: 8px; flex-wrap: wrap; }
+    .search label { display: flex; align-items: center; gap: 6px; }
+    .search input, .search select { padding: 8px 10px; border: 1px solid #d0d5dd; border-radius: 6px; }
+    .actions { margin-top: 12px; display: flex; gap: 8px; }
+    button { padding: 8px 12px; border: 0; border-radius: 6px; background: #1677ff; color: #fff; cursor: pointer; }
+    button.secondary { background: #eef3ff; color: #1677ff; }
+    .table-wrap {
+      margin-top: var(--gap);
+      background: #fff;
+      border: 1px solid #e5e6eb;
+      border-radius: 8px;
+      overflow: auto; /* 高度由 JS 设置 */
+    }
+    table { width: 100%; border-collapse: collapse; min-width: 600px; }
+    thead th { position: sticky; top: 0; background: #f5f7fa; border-bottom: 1px solid #e5e6eb; padding: 10px; text-align: left; }
+    tbody td { border-bottom: 1px solid #f0f0f0; padding: 10px; }
+  </style>
+  <!--
+    需求：
+    1) 上方为不定高查询区；
+    2) 下方表格区高度始终等于页面可用高度（viewport 减查询区实际高度）；
+    3) 若计算得到的可用高度 < 500，则强制将表格可用高度设为 800。
+  -->
+  <script>
+    function toggleMore() {
+      const more = document.getElementById('more');
+      more.style.display = more.style.display === 'none' ? 'block' : 'none';
+    }
+
+    function clampTableHeight() {
+      const searchEl = document.getElementById('search');
+      const tableWrap = document.getElementById('tableWrap');
+      if (!searchEl || !tableWrap) return;
+      const rect = searchEl.getBoundingClientRect();
+      const rootStyles = getComputedStyle(document.documentElement);
+      const gap = parseFloat(rootStyles.getPropertyValue('--gap')) || 0;
+
+      // 页面可用高度 = viewport 高度 - 查询区底部到顶部的距离 - 两块之间的间隔
+      let available = window.innerHeight - rect.bottom - gap;
+
+      // 特殊规则：如果小于 500，则固定为 800
+      if (available < 500) available = 800;
+
+      tableWrap.style.height = `${Math.max(0, Math.floor(available))}px`;
+    }
+
+    // 监听查询区高度变化、窗口尺寸变化
+    const onReady = () => {
+      const searchEl = document.getElementById('search');
+      if (window.ResizeObserver && searchEl) {
+        const ro = new ResizeObserver(() => clampTableHeight());
+        ro.observe(searchEl);
+      }
+      window.addEventListener('resize', clampTableHeight);
+      window.addEventListener('orientationchange', clampTableHeight);
+      clampTableHeight();
+    };
+
+    document.addEventListener('DOMContentLoaded', onReady);
+    window.addEventListener('load', clampTableHeight);
+  </script>
+  <style>
+    /* 仅为演示填充数据，非必需 */
+    .demo-tip { color: #8c8c8c; font-size: 12px; margin-top: 6px; }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <div id="search" class="search">
+      <div class="row">
+        <label>关键词 <input type="text" placeholder="输入关键词"></label>
+        <label>状态
+          <select>
+            <option value="">全部</option>
+            <option>启用</option>
+            <option>停用</option>
+          </select>
+        </label>
+      </div>
+      <div class="row">
+        <label>开始日期 <input type="date"></label>
+        <label>结束日期 <input type="date"></label>
+      </div>
+      <div class="actions">
+        <button>查询</button>
+        <button class="secondary" type="button" onclick="toggleMore()">更多条件</button>
+      </div>
+      <div id="more" style="display:none; margin-top:12px;">
+        <div class="row">
+          <label>城市 <input type="text" placeholder="例如：上海"></label>
+          <label>渠道 <input type="text" placeholder="例如：线上"></label>
+          <label>负责人 <input type="text" placeholder="例如：张三"></label>
+        </div>
+        <div class="demo-tip">点击“更多条件”可改变查询区高度，用于验证下方表格高度的自适应与 500→800 规则。</div>
+      </div>
+    </div>
+
+    <div id="tableWrap" class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>序号</th>
+            <th>名称</th>
+            <th>状态</th>
+            <th>更新时间</th>
+            <th>备注</th>
+          </tr>
+        </thead>
+        <tbody>
+          <script>
+            // 仅为演示渲染一些行
+            (function renderRows() {
+              const tbody = document.currentScript.parentElement;
+              const fragment = document.createDocumentFragment();
+              const now = new Date();
+              for (let i = 1; i <= 120; i++) {
+                const tr = document.createElement('tr');
+                const cols = [
+                  i,
+                  `示例名称 ${i}`,
+                  i % 2 === 0 ? '启用' : '停用',
+                  now.toISOString().slice(0, 19).replace('T', ' '),
+                  '这里是备注信息'
+                ];
+                cols.forEach(text => {
+                  const td = document.createElement('td');
+                  td.textContent = text;
+                  tr.appendChild(td);
+                });
+                fragment.appendChild(tr);
+              }
+              tbody.appendChild(fragment);
+            })();
+          </script>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</body>
+</html>
+
